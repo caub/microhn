@@ -1,5 +1,5 @@
 <script>
-const kidsTemplate = (kids) => `
+const kidsTemplate = kids => `
   <ul style="padding-bottom: 20px">
     ${kids.map(kid => `
       <li>
@@ -10,77 +10,75 @@ const kidsTemplate = (kids) => `
   </ul>
 `;
 
-const pages = {
-  feed: {
-    query: (params) => `
-      {
-        hn {
-          topStories {
-            title
-            id
-            score
-            descendants
-          }
+const feed = {
+  query: params => `
+    {
+      hn {
+        topStories {
+          title
+          id
+          score
+          descendants
         }
       }
-    `,
-    template: (data) => `
-      <p>Hacker News front page <a href="https://github.com/stubailo/microhn">on GitHub</a></p>
-      <ol>
-        ${data.hn.topStories.map((story) => `
-          <li>
-            <a href="#${story.id}">${story.title}</a>
-            &#x2B50; ${story.score} &#128172; ${story.descendants}
-          </li>
-        `).join('')}
-      </ol>
-    `
-  },
-  story: {
-    query: (params) => `
-      {
-        hn {
-          item(id: ${params.id}) {
-            title
-            url
+    }
+  `,
+  template: data => `
+    <p>Hacker News front page <a href="https://github.com/stubailo/microhn">on GitHub</a></p>
+    <ol>
+      ${data.hn.topStories.map(story => `
+        <li>
+          <a href="#${story.id}">${story.title}</a>
+          &#x2B50; ${story.score} &#128172; ${story.descendants}
+        </li>
+      `).join('')}
+    </ol>
+  `
+};
+const story = {
+  query: params => `
+    {
+      hn {
+        item(id: ${params.id}) {
+          title
+          url
+          kids {
+            text
+            by { id }
             kids {
               text
               by { id }
-              kids {
-                text
-                by { id }
-              }
             }
           }
         }
       }
-    `,
-    template: (data) => `
-      <a href="#"><- Front page</a>
-      <h1>
-        <a href="${data.hn.item.url}">
-          ${data.hn.item.title}
-        </a>
-      </h1>
-      ${kidsTemplate(data.hn.item.kids)}
-    `
-  }
+    }
+  `,
+  template: data => `
+    <a href="#"><- Front page</a>
+    <h1>
+      <a href="${data.hn.item.url}">
+        ${data.hn.item.title}
+      </a>
+    </h1>
+    ${kidsTemplate(data.hn.item.kids)}
+  `
 };
 
 function route(event) {
   if (window.location.hash) {
-    render('story', { id: window.location.hash.substr(1) });
+    render(story, { id: window.location.hash.substr(1) });
   } else {
-    render('feed');
+    render(feed);
   }
 }
 
-function render(name, params) {
+function render({query, template}, params) {
   document.body.innerHTML = `<p>Loading...</p>`;
-  fetch('https://www.graphqlhub.com/graphql?' + new URLSearchParams({query: pages[name].query(params)}))
+  fetch('https://www.graphqlhub.com/graphql?' + new URLSearchParams({query: query(params)}))
     .then(r => r.json())
-    .then(({ data }) => {
-      document.body.innerHTML = pages[name].template(data);
+    .then(({data}) => {
+      document.body.innerHTML = template(data);
     });
 }
 

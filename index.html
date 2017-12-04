@@ -1,8 +1,4 @@
-<!-- babel transpilation included for Safari/IE compat. I couldn't bring myself to rewrite this
-without template literals and arrow functions. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
-
-<script type="text/babel">
+<script>
 const kidsTemplate = (kids) => `
   <ul style="padding-bottom: 20px">
     ${kids.map(kid => `
@@ -81,19 +77,13 @@ function route(event) {
 
 function render(name, params) {
   document.body.innerHTML = `<p>Loading...</p>`;
-  get(pages[name].query(params), ({ data }) => {
-    document.body.innerHTML = pages[name].template(data);
-  });
+  fetch('https://www.graphqlhub.com/graphql?' + new URLSearchParams({query: pages[name].query(params)}))
+    .then(r => r.json())
+    .then(({ data }) => {
+      document.body.innerHTML = pages[name].template(data);
+    });
 }
 
 window.addEventListener('hashchange', route);
 window.addEventListener('load', route);
-
-function get(query, cb) {
-  const xhr = new XMLHttpRequest(); // XHR instead of fetch for Edge, IE, Safari
-  xhr.open("get", 'https://www.graphqlhub.com/graphql?query=' + encodeURIComponent(query), true);
-  xhr.responseType = "json";
-  xhr.onload = () => cb(xhr.response);
-  xhr.send();
-}
 </script>
